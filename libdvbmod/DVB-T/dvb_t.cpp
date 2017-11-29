@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <memory.h>
 #include <sys/types.h>
-#include <unistd.h>
+//#include <unistd.h>
 //#include "dvb_gen.h"
 #include "../dvb.h"
 #include "dvb_t.h"

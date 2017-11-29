@@ -132,76 +132,76 @@ void build_tx_sym_tabs( void )
 
     for( i = 0; i < 4; i++ )
 	{
-        a1_qpsk[i].re = c_qpsk[i].re*f*a;
-        a1_qpsk[i].im = c_qpsk[i].im*f*a;
+        a1_qpsk[i][0] = c_qpsk[i][0]*f*a;
+        a1_qpsk[i][1] = c_qpsk[i][1]*f*a;
 	}
     // QAM16 factor
     f = 1.0/sqrt(10);
 
 	for( i = 0; i < 16; i++ )
 	{
-        a1_qam16[i].re = c_qam16[i].re*f*a;
-        a1_qam16[i].im = c_qam16[i].im*f*a;
+        a1_qam16[i][0] = c_qam16[i][0]*f*a;
+        a1_qam16[i][1] = c_qam16[i][1]*f*a;
 	}
     // QAM 64 factor
     f = 1.0/sqrt(42);
 
 	for( i = 0; i < 64; i++ )
 	{
-         a1_qam64[i].re = c_qam64[i].re*f*a;
-         a1_qam64[i].im = c_qam64[i].im*f*a;
+         a1_qam64[i][0] = c_qam64[i][0]*f*a;
+         a1_qam64[i][1] = c_qam64[i][1]*f*a;
 	}
     // QAM16 A2 factor
     f = 1.0/sqrt(20);
 
     for( i = 0; i < 16; i++ )
 	{
-        tr = c_qam16[i].re;
-        ti = c_qam16[i].im;
+        tr = c_qam16[i][0];
+        ti = c_qam16[i][1];
 		tr = tr > 0 ? tr+1 : tr-1;
 		ti = ti > 0 ? ti+1 : ti-1;
 
-        a2_qam16[i].re = tr*f*a;
-        a2_qam16[i].im = ti*f*a;
+        a2_qam16[i][0] = tr*f*a;
+        a2_qam16[i][1] = ti*f*a;
 	}
     // QAM64 A2 factor
     f = 1.0/sqrt(60);
 
 	for( i = 0; i < 64; i++ )
 	{
-        tr = c_qam64[i].re;
-        ti = c_qam64[i].im;
+        tr = c_qam64[i][0];
+        ti = c_qam64[i][1];
 		tr = tr > 0 ? tr+1 : tr-1;
 		ti = ti > 0 ? ti+1 : ti-1;
 
-        a2_qam64[i].re = tr*f*a;
-        a2_qam64[i].im = ti*f*a;
+        a2_qam64[i][0] = tr*f*a;
+        a2_qam64[i][1] = ti*f*a;
 	}
     // QAM16 A4 factor
     f = 1.0/sqrt(52);
 
 	for( i = 0; i < 16; i++ )
 	{
-        tr = c_qam16[i].re;
-        ti = c_qam16[i].im;
+        tr = c_qam16[i][0];
+        ti = c_qam16[i][1];
 		tr = tr > 0 ? tr+3 : tr-3;
 		ti = ti > 0 ? ti+3 : ti-3;
 
-        a4_qam16[i].re = tr*f*a;
-        a4_qam16[i].im = ti*f*a;
+        a4_qam16[i][0] = tr*f*a;
+        a4_qam16[i][1] = ti*f*a;
 	}
     // QAM64 A4 factor
     f = 1.0/sqrt(108);
 
 	for( i = 0; i < 64; i++ )
 	{
-        tr = c_qam64[i].re;
-        ti = c_qam64[i].im;
+        tr = c_qam64[i][0];
+        ti = c_qam64[i][1];
 		tr = tr > 0 ? tr+3 : tr-3;
 		ti = ti > 0 ? ti+3 : ti-3;
 
-        a4_qam64[i].re = tr*f*a;
-        a4_qam64[i].im = ti*f*a;
+        a4_qam64[i][0] = tr*f*a;
+        a4_qam64[i][1] = ti*f*a;
 	}
     // Pilot tones (Fixed)
     f = 4.0/3.0;

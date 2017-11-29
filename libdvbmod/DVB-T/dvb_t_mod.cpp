@@ -122,7 +122,7 @@ void dvb_t_select_constellation_table( void )
 void dvb_t_2k_compensation( fft_complex *s )
 {
    fft_complex *f,*l;
-   float div;
+   double div;
     f = &s[M2KSTART];
     l = &s[M2KSTART+K2MAX-1];
 
@@ -131,10 +131,10 @@ void dvb_t_2k_compensation( fft_complex *s )
     for( int i = 0; i < 300; i++ )
     {
         div *= 0.997;
-        f->re*=div;
-        f->im*=div;
-        l->re*=div;
-        l->im*=div;
+        *f[0]*=div;
+        *f[1]*=div;
+        *l[0]*=div;
+        *l[1]*=div;
         f++;l--;
         if( div <= 1.0 ) break;
     }
@@ -159,7 +159,11 @@ void dvb_t_modulate( uint8_t *syms )
         // Add the reference tones
         memcpy( fm, rt_2k[r], sizeof(fft_complex)*(K2MAX+1));
         // add the data tsymbols
-        for( i = 0; i < M2SI; i++ ) fm[dt_2k[r][i]] = m_co_tab[syms[i]];
+		for (i = 0; i < M2SI; i++)
+		{
+			fm[dt_2k[r][i]][0] = m_co_tab[syms[i]][0];
+			fm[dt_2k[r][i]][1] = m_co_tab[syms[i]][1];
+		}
 //        dvb_t_2k_compensation( m_tx_in_frame );
 //       fft_2k_test( m_tx_out_frame );
          dvbt_fft_modulate( m_tx_in_frame, m_guard );
@@ -171,7 +175,11 @@ void dvb_t_modulate( uint8_t *syms )
         // Add the reference tones
         memcpy( fm, rt_8k[r], sizeof(fft_complex)*(K8MAX+1));
         // add the data symbols
-        for( i = 0; i < M8SI; i++ ) fm[dt_8k[r][i]] = m_co_tab[syms[i]];
+		for (i = 0; i < M8SI; i++)
+		{
+			fm[dt_8k[r][i]][0] = m_co_tab[syms[i]][0];
+			fm[dt_8k[r][i]][1] = m_co_tab[syms[i]][1];
+		}
         dvbt_fft_modulate( m_tx_in_frame, m_guard );
     }
 }

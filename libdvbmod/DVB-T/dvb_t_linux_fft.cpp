@@ -5,6 +5,8 @@
 #include "../dvb.h"
 #include "dvb_t.h"
 
+#define M_PI 3.14159265358979323846264338327
+
 extern DVBTFormat m_format;
 extern double m_sample_rate;
 
@@ -86,8 +88,8 @@ static void fft_2k( fft_complex *in, fft_complex *out )
     m = (M2KS/2);
     for( i = 0; i < (M2KS); i++ )
     {
-        m_fft_in[m].re = in[i].re*m_c[i];
-        m_fft_in[m].im = in[i].im*m_c[i];
+        m_fft_in[m][0] = in[i][0]*m_c[i];
+        m_fft_in[m][1] = in[i][1]*m_c[i];
         m = (m+1)%(M2KS);
     }
 
@@ -95,7 +97,7 @@ static void fft_2k( fft_complex *in, fft_complex *out )
     av_fft_permute( m_avfft_2k_context, m_fft_in );
     av_fft_calc(    m_avfft_2k_context, m_fft_in );
 #else
-    fftw_one( m_fftw_2k_plan, m_fft_in, out );
+	fftw_execute_dft( m_fftw_2k_plan, m_fft_in, out );
 #endif
     return;
 }
@@ -111,8 +113,8 @@ static void fft_4k( fft_complex *in, fft_complex *out )
     m = (M4KS/2)+(M4KS/4);
     for( i = 0; i < (M2KS); i++ )
     {
-        m_fft_in[m].re = in[i].re*m_c[i];
-        m_fft_in[m].im = in[i].im*m_c[i];
+        m_fft_in[m][0] = in[i][0]*m_c[i];
+        m_fft_in[m][1] = in[i][1]*m_c[i];
         m = (m+1)%(M2KS*2);
     }
 
@@ -120,7 +122,7 @@ static void fft_4k( fft_complex *in, fft_complex *out )
     av_fft_permute( m_avfft_4k_context, m_fft_in );
     av_fft_calc(    m_avfft_4k_context, m_fft_in );
 #else
-    fftw_one( m_fftw_4k_plan, m_fft_in, out );
+	fftw_execute_dft( m_fftw_4k_plan, m_fft_in, out );
 #endif
     return;
 }
@@ -140,8 +142,8 @@ static void fft_2k_nb( fft_complex *in, fft_complex *out )
     m = (M8KS)-(M8KS/8);
     for( i = 0; i < (M2KS); i++ )
     {
-        m_fft_in[m].re = in[i].re*m_c[i];
-        m_fft_in[m].im = in[i].im*m_c[i];
+        m_fft_in[m][0] = in[i][0]*m_c[i];
+        m_fft_in[m][1] = in[i][1]*m_c[i];
         m = (m+1)%M2KS;
     }
 
@@ -149,7 +151,7 @@ static void fft_2k_nb( fft_complex *in, fft_complex *out )
     av_fft_permute( m_avfft_8k_context, m_fft_in );
     av_fft_calc(    m_avfft_8k_context, m_fft_in );
 #else
-    fftw_one( m_fftw_8k_plan, m_fft_in, out );
+	fftw_execute_dft( m_fftw_8k_plan, m_fft_in, out );
 #endif
 }
 static void fft_8k( fft_complex *in, fft_complex *out )
@@ -162,8 +164,8 @@ static void fft_8k( fft_complex *in, fft_complex *out )
     m = (M8KS/2);
     for( i = 0; i < (M8KS); i++ )
     {
-        m_fft_in[m].re = in[i].re*m_c[i];
-        m_fft_in[m].im = in[i].im*m_c[i];
+        m_fft_in[m][0] = in[i][0]*m_c[i];
+        m_fft_in[m][1] = in[i][1]*m_c[i];
         m = (m+1)%M8KS;
     }
 
@@ -171,7 +173,7 @@ static void fft_8k( fft_complex *in, fft_complex *out )
     av_fft_permute( m_avfft_8k_context, m_fft_in );
     av_fft_calc(    m_avfft_8k_context, m_fft_in );
 #else
-    fftw_one( m_fftw_8k_plan, m_fft_in, out );
+	fftw_execute_dft( m_fftw_8k_plan, m_fft_in, out );
 #endif
 }
 static void fft_16k( fft_complex *in, fft_complex *out )
@@ -186,8 +188,8 @@ static void fft_16k( fft_complex *in, fft_complex *out )
     m = (M8KS)+(M8KS/2);
     for( i = 0; i < (M8KS); i++ )
     {
-        m_fft_in[m].re = in[i].re*m_c[i];
-        m_fft_in[m].im = in[i].im*m_c[i];
+        m_fft_in[m][0] = in[i][0]*m_c[i];
+        m_fft_in[m][1] = in[i][1]*m_c[i];
         m = (m+1)%(M8KS*2);
     }
 
@@ -195,7 +197,7 @@ static void fft_16k( fft_complex *in, fft_complex *out )
     av_fft_permute( m_avfft_16k_context, m_fft_in );
     av_fft_calc(    m_avfft_16k_context, m_fft_in );
 #else
-    fftw_one( m_fftw_16k_plan, m_fft_in, out );
+	    fftw_execute_dft( m_fftw_16k_plan, m_fft_in, out );
 #endif
 }
 //
@@ -301,7 +303,7 @@ void fft_2k_test(  fftw_complex *out )
 {
     memset(fftw_in, 0, sizeof(fftw_complex)*M2KS);
     int m = (M2KS/2)+32;//1704;
-    fftw_in[m].re =  0.7;
+    fftw_in[m][0] =  0.7;
 
     fftw_one( m_fftw_2k_plan, fftw_in, out );
     return;
@@ -322,28 +324,31 @@ void init_dvb_t_fft( void )
 #else
 
     FILE *fp;
+	m_fft_in = (fft_complex*)fftw_malloc(sizeof(fft_complex)*M16KS);
+	m_fft_out = (fft_complex*)fftw_malloc(sizeof(fft_complex)*M16KS);
     if((fp=fopen("fftw_wisdom","r"))!=NULL)
     {
         fftw_import_wisdom_from_file(fp);
-        m_fftw_2k_plan  = fftw_create_plan(M2KS,  FFTW_BACKWARD, FFTW_USE_WISDOM);
-        m_fftw_4k_plan  = fftw_create_plan(M4KS,  FFTW_BACKWARD, FFTW_USE_WISDOM);
-        m_fftw_8k_plan  = fftw_create_plan(M8KS,  FFTW_BACKWARD, FFTW_USE_WISDOM);
-        m_fftw_16k_plan = fftw_create_plan(M16KS, FFTW_BACKWARD, FFTW_USE_WISDOM);
+		
+        m_fftw_2k_plan  = fftw_plan_dft_1d(M2KS, m_fft_in, m_fft_out,  FFTW_BACKWARD,0);
+        m_fftw_4k_plan  = fftw_plan_dft_1d(M4KS, m_fft_in, m_fft_out, FFTW_BACKWARD, 0);
+        m_fftw_8k_plan  = fftw_plan_dft_1d(M8KS, m_fft_in, m_fft_out, FFTW_BACKWARD, 0);
+        m_fftw_16k_plan = fftw_plan_dft_1d(M16KS, m_fft_in, m_fft_out, FFTW_BACKWARD, 0);
         fftw_import_wisdom_from_file(fp);
     }
     else
     {
+		
         if((fp=fopen("fftw_wisdom","w"))!=NULL)
         {
-            m_fftw_2k_plan  = fftw_create_plan(M2KS,  FFTW_BACKWARD, FFTW_MEASURE | FFTW_USE_WISDOM);
-            m_fftw_4k_plan  = fftw_create_plan(M4KS,  FFTW_BACKWARD, FFTW_MEASURE | FFTW_USE_WISDOM);
-            m_fftw_8k_plan  = fftw_create_plan(M8KS,  FFTW_BACKWARD, FFTW_MEASURE | FFTW_USE_WISDOM);
-            m_fftw_16k_plan = fftw_create_plan(M16KS, FFTW_BACKWARD, FFTW_MEASURE | FFTW_USE_WISDOM);
+            m_fftw_2k_plan  = fftw_plan_dft_1d(M2KS, m_fft_in, m_fft_out, FFTW_BACKWARD, FFTW_MEASURE );
+            m_fftw_4k_plan  = fftw_plan_dft_1d(M4KS, m_fft_in, m_fft_out, FFTW_BACKWARD, FFTW_MEASURE );
+            m_fftw_8k_plan  = fftw_plan_dft_1d(M8KS, m_fft_in, m_fft_out, FFTW_BACKWARD, FFTW_MEASURE );
+            m_fftw_16k_plan = fftw_plan_dft_1d(M16KS, m_fft_in, m_fft_out, FFTW_BACKWARD, FFTW_MEASURE);
             if(fp!=NULL) fftw_export_wisdom_to_file(fp);
         }
     }
-    m_fft_in  = (fft_complex*)fftw_malloc(sizeof(fft_complex)*M16KS);
-    m_fft_out = (fft_complex*)fftw_malloc(sizeof(fft_complex)*M16KS);
+   
 #endif
     if( m_format.tm == TM_2K)
     {

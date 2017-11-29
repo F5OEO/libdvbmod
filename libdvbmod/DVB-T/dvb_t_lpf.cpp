@@ -1,4 +1,6 @@
+#include "../dvb.h"
 #include "dvb_t.h"
+
 // This modules is an LPF filter used for filtering the shoulders and aliases
 // on the ouput of the DVB-T iFFT
 // It operates in place
@@ -103,23 +105,24 @@ fft_complex *dvbt_filter( fft_complex *in, int length )
     // Allocate memory if needed
     if( length > m_length )
     {
-        if( m_out != NULL ) free(m_out);
+        if( m_out != NULL ) fftw_free(m_out);
         m_length = sizeof(fft_complex)*length;
-        m_out = (fft_complex*)malloc(m_length);
-
+       // m_out = (fft_complex*)malloc(m_length);
+		m_out = (fft_complex*)fftw_malloc(m_length);
     }
 
     for( int i = 0; i < length; i++ )
     {
-        m_mem[m_ip] = in[i];
+        m_mem[m_ip][0] = in[i][0];
+		m_mem[m_ip][1] = in[i][1];
         m_ip = (m_ip+1)%FILTER_TAP_NUM;
 
-        m_out[op].re = m_out[op].im = 0;
+        m_out[op][0] = m_out[op][1] = 0;
         int k = m_ip;
         for( int n = 0; n < FILTER_TAP_NUM; n++ )
         {
-            m_out[op].re += filter_taps[n]*m_mem[k].re;
-            m_out[op].im += filter_taps[n]*m_mem[k].im;
+            m_out[op][0] += filter_taps[n]*m_mem[k][0];
+            m_out[op][1] += filter_taps[n]*m_mem[k][1];
             k = (k+1)%FILTER_TAP_NUM;
         }
         op++;

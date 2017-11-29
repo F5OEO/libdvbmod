@@ -52,7 +52,7 @@ void build_2k_sf_ref( void )
         for( i = 0; i < PPS_2K_TAB_LEN; i++ )
         {
             k = sptab_2k[i];// Tone to do
-            rt_2k[l][k].re = pc_stab_cont[m_sync_prbs[k]];
+            rt_2k[l][k][0] = pc_stab_cont[m_sync_prbs[k]];
         }
     }
 
@@ -64,7 +64,7 @@ void build_2k_sf_ref( void )
             k = K2MIN + (3*(l%4))+(12*p);
             if( k < K2MAX )
             {
-                rt_2k[l][k].re = pc_stab_scat[m_sync_prbs[k]];
+                rt_2k[l][k][0] = pc_stab_scat[m_sync_prbs[k]];
             }
         }
     }
@@ -77,7 +77,7 @@ void build_2k_sf_ref( void )
         for( i = 0; i < TPS_2K_TAB_LEN; i++ )
         {
             k = sttab_2k[i];// tone to do
-            rt_2k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]][l]];
+            rt_2k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]][l]];
         }
     }
     // Frame 2
@@ -87,7 +87,7 @@ void build_2k_sf_ref( void )
         for( i = 0; i < TPS_2K_TAB_LEN; i++ )
         {
             k = sttab_2k[i];//tone to do
-            rt_2k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]+2][l]];
+            rt_2k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]+2][l]];
         }
     }
     // Frame 3
@@ -97,7 +97,7 @@ void build_2k_sf_ref( void )
         for( i = 0; i < TPS_2K_TAB_LEN; i++ )
         {
             k = sttab_2k[i];// tone to do
-            rt_2k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]+4][l]];
+            rt_2k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]+4][l]];
         }
     }
     // Frame 4
@@ -107,7 +107,7 @@ void build_2k_sf_ref( void )
         for( i = 0; i < TPS_2K_TAB_LEN; i++ )
         {
             k = sttab_2k[i];// tone to do
-            rt_2k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]+6][l]];
+            rt_2k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]+6][l]];
         }
     }
     // Now build the data tone reference table
@@ -116,7 +116,7 @@ void build_2k_sf_ref( void )
         i = 0;
         for( k = K2MIN; k <= K2MAX; k++ )
         {
-            if(rt_2k[l][k].re == 0 ) dt_2k[l][i++]=k;
+            if(rt_2k[l][k][0] == 0 ) dt_2k[l][i++]=k;
         }
     }
 }
@@ -133,7 +133,7 @@ void build_8k_sf_ref( void )
        for( i = 0; i < PPS_8K_TAB_LEN; i++ )
        {
            k = sptab_8k[i];//Tone to do
-           rt_8k[l][k].re = pc_stab_cont[m_sync_prbs[k]];
+           rt_8k[l][k][0] = pc_stab_cont[m_sync_prbs[k]];
        }
     }
     // Add the scattered pilot tones
@@ -144,7 +144,7 @@ void build_8k_sf_ref( void )
           k = K8MIN + (3*(l%4))+(12*p);
           if( k < K8MAX )
           {
-             rt_8k[l][k].re = pc_stab_scat[m_sync_prbs[k]];
+             rt_8k[l][k][0] = pc_stab_scat[m_sync_prbs[k]];
           }
         }
     }
@@ -156,7 +156,7 @@ void build_8k_sf_ref( void )
         for( i = 0; i < TPS_8K_TAB_LEN; i++ )
         {
            k = sttab_8k[i];
-           rt_8k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]][l]];
+           rt_8k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]][l]];
         }
     }
     // Frame 2
@@ -166,7 +166,7 @@ void build_8k_sf_ref( void )
         for( i = 0; i < TPS_8K_TAB_LEN; i++ )
         {
             k = sttab_8k[i];
-            rt_8k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]+2][l]];
+            rt_8k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]+2][l]];
         }
     }
     // Frame 3
@@ -176,7 +176,7 @@ void build_8k_sf_ref( void )
         for( i = 0; i < TPS_8K_TAB_LEN; i++ )
         {
            k = sttab_8k[i];
-           rt_8k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]+4][l]];
+           rt_8k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]+4][l]];
         }
     }
     // Frame 4
@@ -186,7 +186,7 @@ void build_8k_sf_ref( void )
         for( i = 0; i < TPS_8K_TAB_LEN; i++ )
         {
             k = sttab_8k[i];
-            rt_8k[s][k].re = pc_stab_tps[sstd[m_sync_prbs[k]+6][l]];
+            rt_8k[s][k][0] = pc_stab_tps[sstd[m_sync_prbs[k]+6][l]];
         }
     }
     // Now build the data tone reference table
@@ -195,7 +195,7 @@ void build_8k_sf_ref( void )
         i = 0;
         for( k = K8MIN; k <= K8MAX; k++ )
         {
-            if(rt_8k[l][k].re == 0 )dt_8k[l][i++]=k;
+            if(rt_8k[l][k][0] == 0 )dt_8k[l][i++]=k;
         }
     }
 }
