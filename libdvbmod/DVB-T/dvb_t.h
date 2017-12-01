@@ -12,7 +12,7 @@ extern "C" {
 #include <libavutil/mem.h>
 }
 #else
-#include "fftw.h"
+#include "fftw3.h"
 #endif
 
 #include "../dvb.h"

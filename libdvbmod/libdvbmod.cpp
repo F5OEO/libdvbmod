@@ -1,5 +1,5 @@
 #include "libdvbmod.h"
-#include "DVB-S2\DVBS2.h"
+#include "./DVB-S2/DVBS2.h"
 
 DVBS2 DvbS2Modulator;
 
