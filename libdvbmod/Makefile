@@ -8,7 +8,7 @@
 CC = g++
 OUT_FILE_NAME = libdvbmod.a
 
-CFLAGS= -fPIC -O0 -g -Wall -c -fpermissive
+CFLAGS= -fPIC -O2 -g -Wall -c -fpermissive
 
 INC = -I../Import
 
@@ -25,7 +25,11 @@ OUT_DIR=./lib
 
 
 # Enumerating of every *.cpp as *.o and using that as dependency
-$(OUT_FILE_NAME): $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-S/*.cpp)) $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-T/*.cpp)) $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-T/*.cpp))
+$(OUT_FILE_NAME):\
+$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard *.cpp))\
+$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-S/*.cpp)) \
+$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-T/*.cpp)) \
+$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-S2/*.cpp))
 	ar -r -o $(OUT_DIR)/$@ $^
 
 

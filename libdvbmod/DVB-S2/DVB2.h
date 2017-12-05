@@ -84,7 +84,8 @@ typedef struct{
 #define CR_4_5 7
 #define CR_5_6 8
 #define CR_8_9 9
-#define CR_9_10 10
+#define CR_7_8 10
+#define CR_9_10 11
 // BCH Code
 #define BCH_CODE_N8  0
 #define BCH_CODE_N10 1

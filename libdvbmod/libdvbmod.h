@@ -1,5 +1,6 @@
 #ifndef LIBDVBMOD_H_
 #define LIBDVBMOD_H_
+//#define WITH_ARM
 #include <stdint.h>
 // ********************** S2 MODULATOR 
 // Code rates
@@ -13,7 +14,8 @@
 #define CR_4_5 7
 #define CR_5_6 8
 #define CR_8_9 9
-#define CR_9_10 10
+#define CR_7_8 10
+#define CR_9_10 11
 
 // Constellation
 #define M_QPSK   0
@@ -36,4 +38,14 @@ extern int Dvbs2Init(int SRate, int CodeRate, int Constellation, int PilotesOn, 
 extern int Dvbs2AddTsPacket(uint8_t *Packet);
 extern sfcmplx *Dvbs2_get_IQ(void);
 
+extern int DvbsInit(int SRate, int CodeRate);
+extern int DvbsAddTsPacket(uint8_t *Packet);
+extern sfcmplx *Dvbs_get_IQ(void);
+#ifdef WITH_ARM
+#ifdef __arm__
+extern int DvbsInit(int SRate, int CodeRate);
+extern int DvbsAddTsPacket(uint8_t *Packet);
+extern sfcmplx *Dvbs_get_IQ(void);
+#endif
+#endif
 #endif

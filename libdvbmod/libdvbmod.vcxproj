@@ -164,6 +164,7 @@
     <ClCompile Include="DVB-T\dvb_t_stab.cpp" />
     <ClCompile Include="DVB-T\dvb_t_sym.cpp" />
     <ClCompile Include="DVB-T\dvb_t_tp.cpp" />
+    <ClCompile Include="fec100.c" />
     <ClCompile Include="libdvbmod.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +175,9 @@
     <ClInclude Include="dvb.h" />
     <ClInclude Include="dvb_types.h" />
     <ClInclude Include="libdvbmod.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dvbsenco8.s" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

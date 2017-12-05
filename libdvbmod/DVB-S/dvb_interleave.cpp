@@ -1,5 +1,6 @@
 #include "memory.h"
 #include "../dvb.h"
+#include "dvbs.h"
 
 #define I_MOD  17
 #define I_ROWS 12
@@ -46,7 +47,7 @@ inline void dvb_interleave_sub( uint8_t *inout )
 //
 // Do this inplace, interleave the bytes
 //
-#define DVBS_T_CODED_FRAME_LEN (188+16)
+
 void dvb_convolutional_interleave( uint8_t *inout )
 {
     int i;

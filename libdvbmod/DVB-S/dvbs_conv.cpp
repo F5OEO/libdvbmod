@@ -60,7 +60,7 @@ void dvb_conv_ctl( void )
     encode_state   = 0;
 }
 
-void dvb_conv_init( void )
+void dvb_conv_init( int FEC )
 {
     int i;
    
@@ -73,7 +73,7 @@ void dvb_conv_init( void )
     
     dvb_conv_ctl();
 	// FixMe should pass FEC 
-
+	dvbs_code_rate = FEC;
     //if( info.dvb_mode == MODE_DVBS ) dvbs_code_rate = info.dvbs_fmt.fec;
     //if( info.dvb_mode == MODE_DVBT ) dvbs_code_rate = info.dvbt_fmt.fec;
 

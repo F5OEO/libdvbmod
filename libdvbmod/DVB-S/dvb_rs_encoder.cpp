@@ -98,7 +98,7 @@ void build_gf_tab( void )
         }
     }
     gf[0] = 0;
-    for( i = 0; i < G_SIZE; i++ )
+    for( i = 0; i < G_SIZE-1; i++ ) //GSIZE-1 : Fixme : Nee to check if valid : GSIZE in original code
     {
         gf[n++] = temp[i];
     }

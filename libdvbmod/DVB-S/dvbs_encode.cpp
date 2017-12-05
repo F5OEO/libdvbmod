@@ -1,21 +1,14 @@
 #include "memory.h"
 #include "../dvb.h"
+#include "dvbs.h"
+#include <stdio.h>
 extern void dvb_rs_encode(uint8_t *inout);
 extern void dvb_convolutional_interleave(uint8_t *inout);
 extern int dvb_conv_encode_frame(uint8_t *in, uint8_t *out, int len);
+extern void dvb_conv_init(int FEC);
+extern void dvb_interleave_init(void);
+extern void dvb_rs_init(void);
 
-#define MP_T_SYNC 0x47
-#define DVBS_T_ISYNC 0xB8
-#define DVBS_T_PAYLOAD_LEN 187
-#define MP_T_FRAME_LEN 188
-#define DVBS_RS_BLOCK_DATA 239
-#define DVBS_RS_BLOCK_PARITY 16
-#define DVBS_RS_BLOCK (DVBS_RS_BLOCK_DATA+DVBS_RS_BLOCK_PARITY)
-#define DVBS_PARITY_LEN 16
-#define DVBS_T_CODED_FRAME_LEN (MP_T_FRAME_LEN+DVBS_PARITY_LEN)
-#define DVBS_T_FRAMES_IN_BLOCK 8
-#define DVBS_T_BIT_WIDTH 8
-#define DVBS_T_SCRAM_SEQ_LENGTH 1503
 
 unsigned int s_reg;// Register used for scrambler
 unsigned char dvbs_s_table[DVBS_T_SCRAM_SEQ_LENGTH];//Scrambler table
@@ -71,9 +64,13 @@ void dvb_scramble_transport_packet( uint8_t *in, uint8_t *out )
 	// scrambled so we need to increment the pointer by one
     m_sc++;
 }
-void dvb_encode_init( void )
+void dvb_encode_init( int FEC )
 {
+	dvb_interleave_init();
+	dvb_rs_init();
+	
 	dvb_scrambler_init();
+	dvb_conv_init(FEC);
 	m_fc = 0;
 	m_sc = 0;
 }
@@ -92,7 +89,7 @@ int dvb_encode_frame( uint8_t *tp, uint8_t *dibit  )
 {
 	int len;
     uint8_t pkt[DVBS_RS_BLOCK];
-
+	
     if( m_fc == 0 )
 	{
 		// Add the inverted sync byte and do the first frame
@@ -109,15 +106,17 @@ int dvb_encode_frame( uint8_t *tp, uint8_t *dibit  )
 
 	// Apply the scrambler
     dvb_scramble_transport_packet( tp, pkt );
-
+	
 	// Reed Solomon Encode the whole frame
     dvb_rs_encode( pkt );
+	
 
 	// Apply the Interleaver
     dvb_convolutional_interleave( pkt );
-
+	
 	// Apply the convolutional encoder and produce the dibit array
     len = dvb_conv_encode_frame( pkt, dibit, DVBS_T_CODED_FRAME_LEN );
+	
 	return len;
 }
 
