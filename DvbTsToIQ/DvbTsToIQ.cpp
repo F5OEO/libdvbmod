@@ -6,8 +6,9 @@
 #include <math.h>
 #include <errno.h>
 #include "../libdvbmod/libdvbmod.h"
-
-
+#include <getopt.h>
+#include <ctype.h>
+#define PROGRAM_VERSION "0.0.1"
 
 #ifndef WINDOWS
 
@@ -34,7 +35,11 @@ htonl() */
 
 
 FILE *input, *output;
+enum {DVBS,DVBS2};
+int Bitrate = 0;
+int ModeDvb = 0;
 #define BUFFER_SIZE (188*7) 
+int Pilot = 0;
 
 void RunWithFile()
 {
@@ -49,14 +54,21 @@ void RunWithFile()
 			if (BufferTS[0] != 0x47) fprintf(stderr, "TS Sync Error\n");
 			for (int i = 0; i < NbRead; i += 188)
 			{
-				//int len = Dvbs2AddTsPacket(BufferTS + i);
-				int len = DvbsAddTsPacket(BufferTS + i);
-				
+				int len=0;
+				if (ModeDvb == DVBS)
+					 len = DvbsAddTsPacket(BufferTS + i);
+				if (ModeDvb == DVBS2)
+					 len = Dvbs2AddTsPacket(BufferTS + i);
 						
 				if (NbRead == BUFFER_SIZE)
 				{
-					//sfcmplx *Frame = Dvbs2_get_IQ();
-					sfcmplx *Frame = Dvbs_get_IQ();
+					sfcmplx *Frame=NULL;
+					
+					if (ModeDvb == DVBS)
+						 Frame = Dvbs_get_IQ();
+					if (ModeDvb == DVBS2)
+						Frame = Dvbs2_get_IQ();
+
 					fwrite(Frame, sizeof(sfcmplx), len, output);
 					
 				}
@@ -69,127 +81,144 @@ void RunWithFile()
 
 }
 
-#define DEST_PORT 10000
-#define RECV_IP_ADDR "230.0.0.10"
-
-#ifdef NETWORK_UNDER_WORK
-
-void RunWithNetwork()
+void print_usage()
 {
-#ifdef WINDOWS
-	WSADATA 			wsaData;
 
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-	{
-		
-	}
-#endif
-	int				sockin,sockout,
-	len;
-	char			buffer[4096];
+	fprintf(stderr, \
+		"dvb2iq -%s\n\
+Usage:\ndvb2iq -s SymbolRate [-i File Input] [-o File Output] [-f Fec]  [-m Modulation Type]  [-c Constellation Type] [-p] [-h] \n\
+-i            Input Transport stream File (default stdin) \n\
+-i            OutputIQFile (default stdout) \n\
+-s            SymbolRate in KS (10-4000) \n\
+-f            Fec : {1/2,3/4,5/6,7/8} for DVBS {1/4,1/3,2/5,1/2,3/5,2/3,3/4,5/6,7/8,8/9,9/10} for DVBS2 \n\
+-m            Modulation Type {DVBS,DVBS2}\n\
+-c 	      Constellation mapping (DVBS2) : {QPSK,8PSK,16APSK,32APSK}\n\
+-p 	      Pilots on(DVBS2)\n\
+-h            help (print this help).\n\
+Example : ./dvb2iq -s 1000 -f 7/8 -m DVBS2 -c 8PSK -p\n\
+\n", \
+PROGRAM_VERSION);
 
-	struct	addrinfo			hints;
-
-	if ((sockin = socket(AF_INET, SOCK_DGRAM,	0)) < 0)
-	{
-	
-	}
-	
-	struct sockaddr_in	local_sin;
-	local_sin.sin_family = AF_INET;
-	local_sin.sin_port = htons(DEST_PORT);
-	local_sin.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	if (bind(sockin,
-		(struct sockaddr FAR *) &local_sin,
-		sizeof(local_sin)) == SOCKET_ERROR)
-	{
-		printf("Binding socket failed! Error: %d\n", SOCKET_ERRNO);
-		
-		return FALSE;
-	}
-	struct ip_mreq mreq;
-	mreq.imr_multiaddr.s_addr = inet_addr(RECV_IP_ADDR);
-	mreq.imr_interface.s_addr = INADDR_ANY;
-	if ((sockout = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	{
-
-	}
-	multicast_setup_listen(sockin, config->group, config->source,
-		config->iface) < 0)
-	unsigned char BufferTS[BUFFER_SIZE * 100];
-	while (1)
-	{
-		int NbRead = fread(BufferTS, 1, BUFFER_SIZE, input);
-		if (NbRead < 0) break;
-		if (NbRead > 0)
-		{
-			if (BufferTS[0] != 0x47) fprintf(stderr, "TS Sync Error\n");
-			for (int i = 0; i < NbRead; i += 188)
-			{
-				int len = Dvbs2AddTsPacket(BufferTS + i);
-
-				if (len > 0)
-				{
-					sfcmplx *Frame = Dvbs2_get_IQ();
-					for (int j = 0; j < len; j++)
-					{
-						short Re, Im;
-						Re = (short)round((Frame[i].re * 32767));
-						Im = (short)round((Frame[i].im * 32767));
-						fwrite(&Re, 1, sizeof(short), output);
-						fwrite(&Im, 1, sizeof(short), output);
-					}
-				}
-			}
-		}
-	}
-
-}
-#endif
+} /* end function print_usage */
 
 int main(int argc, char **argv)
 {
-	if (argc > 1) {
-		if (!strcmp(argv[1], "-")) {
-			input = stdin;
+	input = stdin;
+	output = stdout;
+	int FEC = CR_1_2;
+	int Constellation = M_QPSK;
+	int a;
+	int anyargs = 0;
+	int SymbolRate = 0;
+	ModeDvb = DVBS;
+	while (1)
+	{
+		a = getopt(argc, argv, "i:o:s:f:c:hf:m:c:p");
+
+		if (a == -1)
+		{
+			if (anyargs) break;
+			else a = 'h'; //print usage and exit
 		}
-		else {
-			input = fopen(argv[1], "r");
-			if (NULL == input) {
+		anyargs = 1;
+
+		switch (a)
+		{
+		case 'i': // InputFile
+			input = fopen(optarg, "r");
+			if (NULL == input)
+			{
 				fprintf(stderr, "Unable to open '%s': %s\n",
-					argv[1], strerror(errno));
+					optarg, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
-		}
-	}
-	else {
-		input = stdin;
-	}
-
-	if (argc > 2) {
-		if (!strcmp(argv[2], "-")) {
-			output = stdout;
-		}
-		else {
-			output = fopen(argv[2], "wb");
-			if (NULL == input) {
+			break;
+		case 'o': //output file
+			output = fopen(optarg, "wb");
+			if (NULL == output) {
 				fprintf(stderr, "Unable to open '%s': %s\n",
-					argv[1], strerror(errno));
+					optarg, strerror(errno));
 				exit(EXIT_FAILURE);
+			};
+			break;
+		case 's': // SymbolRate in KS
+			SymbolRate = atoi(optarg)*1000;
+			break;
+		case 'f': // FEC
+			if (strcmp("1/2", optarg) == 0) FEC = CR_1_2;
+			if (strcmp("2/3", optarg) == 0) FEC = CR_2_3;
+			if (strcmp("3/4", optarg) == 0) FEC = CR_3_4;
+			if (strcmp("5/6", optarg) == 0) FEC = CR_5_6;
+			if (strcmp("7/8", optarg) == 0) FEC = CR_7_8;
+
+			//DVBS2 specific
+			if (strcmp("1/4", optarg) == 0) FEC = CR_1_4;
+			if (strcmp("1/3", optarg) == 0) FEC = CR_1_3;
+			if (strcmp("2/5", optarg) == 0) FEC = CR_2_5;
+			if (strcmp("3/5", optarg) == 0) FEC = CR_3_5;
+			if (strcmp("4/5", optarg) == 0) FEC = CR_4_5;
+			if (strcmp("8/8", optarg) == 0) FEC = CR_8_9;
+			if (strcmp("9/10", optarg) == 0) FEC = CR_9_10;
+
+
+			if (strcmp("carrier", optarg) == 0) { FEC = 0; }//CARRIER MODE
+			if (strcmp("test", optarg) == 0) FEC = -1;//TEST MODE
+			break;
+		case 'h': // help
+			print_usage();
+			exit(0);
+			break;
+		case 'l': // loop mode
+			break;
+		case 'm': //Modulation DVBS or DVBS2
+			if (strcmp("DVBS", optarg) == 0) ModeDvb = DVBS;
+			if (strcmp("DVBS2", optarg) == 0) ModeDvb = DVBS2;
+		case 'c': // Constellation DVB S2 
+			if (strcmp("QPSK", optarg) == 0) Constellation = M_QPSK;
+			if (strcmp("8PSK", optarg) == 0) Constellation = M_8PSK;
+			if (strcmp("16APSK", optarg) == 0) Constellation = M_16APSK;
+			if (strcmp("32APSK", optarg) == 0) Constellation = M_32APSK;
+			break;
+		case 'p': 
+			Pilot = 1;
+			break;
+		case -1:
+			break;
+		case '?':
+			if (isprint(optopt))
+			{
+				fprintf(stderr, "dvb2iq `-%c'.\n", optopt);
 			}
-		}
+			else
+			{
+				fprintf(stderr, "dvb2iq: unknown option character `\\x%x'.\n", optopt);
+			}
+			print_usage();
+
+			exit(1);
+			break;
+		default:
+			print_usage();
+			exit(1);
+			break;
+		}/* end switch a */
+	}/* end while getopt() */
+
+	if (SymbolRate == 0)
+	{
+		fprintf(stderr, "SymbolRate is mandatory !\n");
+		exit(0);
 	}
-	else {
-		output = stdout;
+	if (ModeDvb == DVBS)
+	{
+		Bitrate = DvbsInit(SymbolRate, FEC);
 	}
-
-	//int Bitrate=Dvbs2Init(1000000, CR_5_6, M_32APSK, 1, RO_0_35);
-	//fprintf(stderr,"TS bitrate should be %d\n",Bitrate);
-
-	 int Bitrate = DvbsInit(1000000, CR_7_8);
-	fprintf(stderr,"TS bitrate should be %d\n",Bitrate);
-
+	if (ModeDvb == DVBS2)
+	{
+		Bitrate = Dvbs2Init(SymbolRate, FEC, Constellation, 1, RO_0_35);
+	}
+		
+	fprintf(stderr,"Net TS bitrate input should be %d\n",Bitrate);
 	RunWithFile();
     return 0;
 }

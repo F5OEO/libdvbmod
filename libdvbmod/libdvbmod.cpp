@@ -2,6 +2,7 @@
 #include "./DVB-S2/DVBS2.h"
 #include "./DVB-S/dvbs.h"
 
+float CoefFec[12] = { 1 / 4.0,1 / 3.0,2 / 5.0,1 / 2.0,3 / 5.0,2 / 3.0,3 / 4.0,4 / 5.0,5 / 6.0,8 / 9.0,7 / 8.0,9 / 10.0 };
 DVBS2 DvbS2Modulator;
 
 int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff)
@@ -49,7 +50,7 @@ static int LenFrame = 0;
 int DvbsInit(int SRate, int CodeRate)
 {
 	dvb_encode_init(CodeRate);
-	return SRate * 2 * 188 / 204; //Fxme Add FEC Coef
+	return SRate * 2 * 188 * CoefFec [CodeRate ]/ 204; //Fxme Add FEC Coef
 }
 
 int DvbsAddTsPacket(uint8_t *Packet)
