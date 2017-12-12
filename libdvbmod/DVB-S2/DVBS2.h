@@ -7,15 +7,18 @@
 #endif
 
 class DVBS2 : public DVB2{
+public:
+	scmplx m_bpsk[2][2];
+	scmplx m_qpsk[4];
+	scmplx m_8psk[8];
+	scmplx m_16apsk[16];
+	scmplx m_32apsk[32];
 private:
         const static unsigned long g[6];
         const static int ph_scram_tab[64];
         const static int ph_sync_seq[26];
-        scmplx m_bpsk[2][2];
-        scmplx m_qpsk[4];
-        scmplx m_8psk[8];
-        scmplx m_16apsk[16];
-        scmplx m_32apsk[32];
+        
+       
         scmplx m_pl[FRAME_SIZE_NORMAL];
         scmplx m_pl_dummy[FRAME_SIZE_NORMAL];
         int m_cscram[FRAME_SIZE_NORMAL];

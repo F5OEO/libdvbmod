@@ -38,7 +38,7 @@ extern int Dvbs2Init(int SRate, int CodeRate, int Constellation, int PilotesOn, 
 extern int Dvbs2AddTsPacket(uint8_t *Packet);
 extern sfcmplx *Dvbs2_get_IQ(void);
 
-extern int DvbsInit(int SRate, int CodeRate);
+extern int DvbsInit(int SRate, int CodeRate, int Constellation);
 extern int DvbsAddTsPacket(uint8_t *Packet);
 extern sfcmplx *Dvbs_get_IQ(void);
 #ifdef WITH_ARM

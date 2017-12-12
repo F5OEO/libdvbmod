@@ -32,7 +32,7 @@ htonl() */
 #include <stdio.h>
 
 #endif /* WINDOWS */
-
+#include <time.h>
 
 FILE *input, *output;
 enum {DVBS,DVBS2};
@@ -41,12 +41,33 @@ int ModeDvb = 0;
 #define BUFFER_SIZE (188*7) 
 int Pilot = 0;
 
+
+static int64_t _timestamp_ms(void)
+{
+	struct timespec tp;
+
+	if (clock_gettime(CLOCK_REALTIME, &tp) != 0)
+	{
+		return(0);
+	}
+
+	return((int64_t)tp.tv_sec * 1000 + tp.tv_nsec / 1000000);
+}
+
 void RunWithFile()
 {
 	unsigned char BufferTS[BUFFER_SIZE];
+	static uint64_t TimeBefore=0;
 	while (1)
 	{
 		int NbRead = fread(BufferTS, 1, BUFFER_SIZE, input);
+		if (TimeBefore != 0)
+		{
+			
+			int BitRate = NbRead * 1000 * 8 / (_timestamp_ms() - TimeBefore);
+			fprintf(stderr, "Incoming bitrate=%d\n", BitRate);
+		}
+		TimeBefore = _timestamp_ms();
 		if (NbRead < 0) break;
 		if (NbRead > 0)
 		{
@@ -60,10 +81,10 @@ void RunWithFile()
 				if (ModeDvb == DVBS2)
 					 len = Dvbs2AddTsPacket(BufferTS + i);
 						
-				if (NbRead == BUFFER_SIZE)
+				if (len!=0)
 				{
 					sfcmplx *Frame=NULL;
-					
+					//fprintf(stderr, "Len %d\n", len);
 					if (ModeDvb == DVBS)
 						 Frame = Dvbs_get_IQ();
 					if (ModeDvb == DVBS2)
@@ -72,8 +93,7 @@ void RunWithFile()
 					fwrite(Frame, sizeof(sfcmplx), len, output);
 					
 				}
-				else
-					fprintf(stderr, "Incomplete UDP\n");
+				
 				
 			}
 		}
@@ -211,7 +231,7 @@ int main(int argc, char **argv)
 	}
 	if (ModeDvb == DVBS)
 	{
-		Bitrate = DvbsInit(SymbolRate, FEC);
+		Bitrate = DvbsInit(SymbolRate, FEC, Constellation);
 	}
 	if (ModeDvb == DVBS2)
 	{
