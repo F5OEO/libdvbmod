@@ -33,6 +33,7 @@ htonl() */
 
 #endif /* WINDOWS */
 #include <time.h>
+#include <sys/ioctl.h>
 
 FILE *input, *output;
 enum {DVBS,DVBS2};
@@ -42,7 +43,7 @@ int ModeDvb = 0;
 int Pilot = 0;
 
 
-static int64_t _timestamp_ms(void)
+static int64_t _timestamp_us(void)
 {
 	struct timespec tp;
 
@@ -51,23 +52,60 @@ static int64_t _timestamp_ms(void)
 		return(0);
 	}
 
-	return((int64_t)tp.tv_sec * 1000 + tp.tv_nsec / 1000000);
+	return((int64_t)tp.tv_sec * 1000000 + tp.tv_nsec / 1000);
 }
 
 void RunWithFile()
 {
+	unsigned char NullPacket[188] = { 0x47,0x1F,0xFF };
 	unsigned char BufferTS[BUFFER_SIZE];
 	static uint64_t TimeBefore=0;
+	static uint64_t DebugReceivedpacket=0;
 	while (1)
 	{
 		int NbRead = fread(BufferTS, 1, BUFFER_SIZE, input);
-		if (TimeBefore != 0)
+		DebugReceivedpacket += NbRead;
+		if(NbRead!= BUFFER_SIZE) fprintf(stderr, "Read incomplete=%d\n", NbRead);
+		
+		if ( (DebugReceivedpacket%(BUFFER_SIZE*10)==0))
 		{
 			
-			int BitRate = NbRead * 1000 * 8 / (_timestamp_ms() - TimeBefore);
-			fprintf(stderr, "Incoming bitrate=%d\n", BitRate);
+			//int BitRate = DebugReceivedpacket * 1e6 * 8.0 / (_timestamp_us() - TimeBefore);
+			//fprintf(stderr, "Incoming bitrate=%d\n", BitRate);
+				int n, ret;
+				ret = ioctl(fileno(output), FIONREAD, &n);
+				while(n<25000)
+				{
+					int len = 0;
+					if (ModeDvb == DVBS)
+						len = DvbsAddTsPacket(NullPacket);
+					if (ModeDvb == DVBS2)
+						len = Dvbs2AddTsPacket(NullPacket);
+
+					if (len != 0)
+					{
+						sfcmplx *Frame = NULL;
+						//fprintf(stderr, "Len %d\n", len);
+						if (ModeDvb == DVBS)
+							Frame = Dvbs_get_IQ();
+						if (ModeDvb == DVBS2)
+							Frame = Dvbs2_get_IQ();
+
+						fwrite(Frame, sizeof(sfcmplx), len, output);
+
+					}
+					ret = ioctl(fileno(output), FIONREAD, &n);
+				}
+				
+
+				
+			
+			//TimeBefore = _timestamp_us();
+			//DebugReceivedpacket = 0;
 		}
-		TimeBefore = _timestamp_ms();
+		
+		if(TimeBefore==0) TimeBefore = _timestamp_us();
+		
 		if (NbRead < 0) break;
 		if (NbRead > 0)
 		{
@@ -76,6 +114,7 @@ void RunWithFile()
 			for (int i = 0; i < NbRead; i += 188)
 			{
 				int len=0;
+				if ((BufferTS[i + 1] == 0x1F) && (BufferTS[i + 2] == 0xFF)) continue; // Remove Null packets
 				if (ModeDvb == DVBS)
 					 len = DvbsAddTsPacket(BufferTS + i);
 				if (ModeDvb == DVBS2)
