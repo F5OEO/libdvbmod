@@ -39,11 +39,11 @@ FILE *input, *output;
 enum {DVBS,DVBS2};
 int Bitrate = 0;
 int ModeDvb = 0;
-#define BUFFER_SIZE (188*7) 
+#define BUFFER_SIZE (188) 
 int Pilot = 0;
+unsigned int SymbolRate = 0;
 
-
-static int64_t _timestamp_us(void)
+static uint64_t _timestamp_ns(void)
 {
 	struct timespec tp;
 
@@ -52,7 +52,59 @@ static int64_t _timestamp_us(void)
 		return(0);
 	}
 
-	return((int64_t)tp.tv_sec * 1000000 + tp.tv_nsec / 1000);
+	return((int64_t)tp.tv_sec * 1e9 + tp.tv_nsec );
+}
+
+unsigned int NullFiller(int NbPacket)
+{
+	unsigned char NullPacket[188] = { 0x47,0x1F,0xFF };
+	unsigned int TotalSampleWritten = 0;
+	for (int i = 0; i < NbPacket; i++)
+	{
+		int len;
+		if (ModeDvb == DVBS)
+			len = DvbsAddTsPacket(NullPacket);
+		if (ModeDvb == DVBS2)
+			len = Dvbs2AddTsPacket(NullPacket);
+		if (len != 0)
+		{
+			sfcmplx *Frame = NULL;
+			//fprintf(stderr, "Len %d\n", len);
+			if (ModeDvb == DVBS)
+				Frame = Dvbs_get_IQ();
+			if (ModeDvb == DVBS2)
+				Frame = Dvbs2_get_IQ();
+
+			fwrite(Frame, sizeof(sfcmplx), len, output);
+			TotalSampleWritten += len;
+		}
+	}
+	return TotalSampleWritten;
+}
+
+unsigned int CalibrateOutput()
+{
+	int n, ret;
+	static uint64_t TimeBefore = 0;
+	ret = ioctl(fileno(output), FIONREAD, &n);
+	int n_start = 0;
+	usleep(1e6);
+	NullFiller(10000);
+	
+	ret = ioctl(fileno(output), FIONREAD, &n);
+	n_start = n;
+	TimeBefore = _timestamp_ns();
+	fprintf(stderr, "Fillstart is %i %lu\n", n_start, TimeBefore);
+	uint WaitSampleWritten = 0;
+	while (WaitSampleWritten < SymbolRate)
+	{
+		WaitSampleWritten += NullFiller(1);
+	}
+	
+	fprintf(stderr, "Fillstop is %i %lu\n", n, _timestamp_ns());
+	unsigned int OutSampleRate = (WaitSampleWritten) * 1e9  / (_timestamp_ns() - TimeBefore);
+	return OutSampleRate;
+
 }
 
 void RunWithFile()
@@ -61,50 +113,14 @@ void RunWithFile()
 	unsigned char BufferTS[BUFFER_SIZE];
 	static uint64_t TimeBefore=0;
 	static uint64_t DebugReceivedpacket=0;
+	//fprintf(stderr, "Output samplerate is %u\n", CalibrateOutput());
 	while (1)
 	{
 		int NbRead = fread(BufferTS, 1, BUFFER_SIZE, input);
 		DebugReceivedpacket += NbRead;
 		if(NbRead!= BUFFER_SIZE) fprintf(stderr, "Read incomplete=%d\n", NbRead);
 		
-		if ( (DebugReceivedpacket%(BUFFER_SIZE*10)==0))
-		{
-			
-			//int BitRate = DebugReceivedpacket * 1e6 * 8.0 / (_timestamp_us() - TimeBefore);
-			//fprintf(stderr, "Incoming bitrate=%d\n", BitRate);
-				int n, ret;
-				ret = ioctl(fileno(output), FIONREAD, &n);
-				while(n<25000)
-				{
-					int len = 0;
-					if (ModeDvb == DVBS)
-						len = DvbsAddTsPacket(NullPacket);
-					if (ModeDvb == DVBS2)
-						len = Dvbs2AddTsPacket(NullPacket);
-
-					if (len != 0)
-					{
-						sfcmplx *Frame = NULL;
-						//fprintf(stderr, "Len %d\n", len);
-						if (ModeDvb == DVBS)
-							Frame = Dvbs_get_IQ();
-						if (ModeDvb == DVBS2)
-							Frame = Dvbs2_get_IQ();
-
-						fwrite(Frame, sizeof(sfcmplx), len, output);
-
-					}
-					ret = ioctl(fileno(output), FIONREAD, &n);
-				}
-				
-
-				
-			
-			//TimeBefore = _timestamp_us();
-			//DebugReceivedpacket = 0;
-		}
-		
-		if(TimeBefore==0) TimeBefore = _timestamp_us();
+		if(TimeBefore==0) TimeBefore = _timestamp_ns();
 		
 		if (NbRead < 0) break;
 		if (NbRead > 0)
@@ -135,7 +151,16 @@ void RunWithFile()
 				
 				
 			}
+			int n, ret;
+			ret = ioctl(fileno(output), FIONREAD, &n);
+			//if (n > 64000) fprintf(stderr, "DVB2IQ fifoout %d\n", n);
+			while (n <= 32000)
+			{
+				NullFiller(10);
+				ret = ioctl(fileno(output), FIONREAD, &n);
+			}
 		}
+		
 	}
 
 }
@@ -168,7 +193,7 @@ int main(int argc, char **argv)
 	int Constellation = M_QPSK;
 	int a;
 	int anyargs = 0;
-	int SymbolRate = 0;
+	
 	ModeDvb = DVBS;
 	while (1)
 	{
