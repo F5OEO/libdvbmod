@@ -1,4 +1,4 @@
-// DvbTsToIQ.cpp : définit le point d'entrée pour l'application console.
+// DvbTsToIQ.cppï¿½: dï¿½finit le point d'entrï¿½e pour l'application console.
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
 			if (strcmp("2/5", optarg) == 0) FEC = CR_2_5;
 			if (strcmp("3/5", optarg) == 0) FEC = CR_3_5;
 			if (strcmp("4/5", optarg) == 0) FEC = CR_4_5;
-			if (strcmp("8/8", optarg) == 0) FEC = CR_8_9;
+			if (strcmp("8/9", optarg) == 0) FEC = CR_8_9;
 			if (strcmp("9/10", optarg) == 0) FEC = CR_9_10;
 
 
