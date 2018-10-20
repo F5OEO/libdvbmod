@@ -172,7 +172,7 @@ void print_usage()
 		"dvb2iq -%s\n\
 Usage:\ndvb2iq -s SymbolRate [-i File Input] [-o File Output] [-f Fec]  [-m Modulation Type]  [-c Constellation Type] [-p] [-h] \n\
 -i            Input Transport stream File (default stdin) \n\
--i            OutputIQFile (default stdout) \n\
+-o            OutputIQFile (default stdout) \n\
 -s            SymbolRate in KS (10-4000) \n\
 -f            Fec : {1/2,3/4,5/6,7/8} for DVBS {1/4,1/3,2/5,1/2,3/5,2/3,3/4,5/6,7/8,8/9,9/10} for DVBS2 \n\
 -m            Modulation Type {DVBS,DVBS2}\n\
