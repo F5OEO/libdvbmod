@@ -42,7 +42,14 @@ dirmake:
 	@mkdir -p $(OUT_DIR)
 	@mkdir -p $(OBJ_DIR)
 	
+	@mkdir -p $(OBJ_DIR)/DVB-S
+	@mkdir -p $(OBJ_DIR)/DVB-S2
+	@mkdir -p $(OBJ_DIR)/DVB-T
+	
 clean:
 	rm -f $(OBJ_DIR)/*.o $(OUT_DIR)/$(OUT_FILE_NAME) Makefile.bak
-
+	rm -f $(OBJ_DIR)/DVB-S/*.o
+	rm -f $(OBJ_DIR)/DVB-S2/*.o
+	rm -f $(OBJ_DIR)/DVB-T/*.o
+	
 rebuild: clean build
