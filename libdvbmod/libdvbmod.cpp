@@ -2,11 +2,18 @@
 #include "./DVB-S2/DVBS2.h"
 #include "./DVB-S/dvbs.h"
 #include "math.h"
+#include <stdlib.h> 
 
+
+#define UPSAMPLE_MAX 4
+size_t m_upsample=1;
 float CoefFec[12] = { 1 / 4.0,1 / 3.0,2 / 5.0,1 / 2.0,3 / 5.0,2 / 3.0,3 / 4.0,4 / 5.0,5 / 6.0,8 / 9.0,7 / 8.0,9 / 10.0 };
 DVBS2 DvbS2Modulator;
 
-int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff)
+size_t DVBS2Length=0;
+static sfcmplx *dvbs_symbols_short;
+
+int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample)
 {
 	DVB2FrameFormat S2Format;
 	S2Format.frame_type = FRAME_NORMAL;
@@ -18,19 +25,40 @@ int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff
 	S2Format.null_deletion = 0;
 	S2Format.dummy_frame = 0;
 	DvbS2Modulator.s2_set_configure(&S2Format);
-	
+	m_upsample=Upsample;
+	dvbs_symbols_short=(sfcmplx*)malloc(FRAME_SIZE_NORMAL*m_upsample*sizeof(sfcmplx));
 	return (int)(SRate*DvbS2Modulator.s2_get_efficiency());
 }
 
 int Dvbs2AddTsPacket(uint8_t *Packet)
 {
-	return(DvbS2Modulator.s2_add_ts_frame(Packet));
+	DVBS2Length=DvbS2Modulator.s2_add_ts_frame(Packet);
+	return DVBS2Length*m_upsample;
 	
 }
 
 sfcmplx *Dvbs2_get_IQ(void)
 {
-	return (sfcmplx*)DvbS2Modulator.pl_get_frame();
+	if(m_upsample>1)
+	{
+		static sfcmplx Zero;
+		Zero.im=0;
+		Zero.re=0;
+		sfcmplx *FrameS2IQ=(sfcmplx*)DvbS2Modulator.pl_get_frame();
+		for(size_t i=0;i<DVBS2Length;i++)
+		{
+			for(size_t j=0;j<m_upsample;j++)
+				dvbs_symbols_short[i*m_upsample+j]=(j==0)?FrameS2IQ[i]:Zero;
+		}
+		return dvbs_symbols_short;
+	}
+	else
+	{	
+		
+		return (sfcmplx*)DvbS2Modulator.pl_get_frame();
+
+	}
+	
 }
 
 //******************* DVB-S **********************************
@@ -78,18 +106,26 @@ void InitConstellation(void)
 
 static uint8_t dvbs_dibit[DVBS_RS_BLOCK*16];
 static sfcmplx dvbs_symbol[DVBS_RS_BLOCK*16*4];
+
+
+
+
 static uint8_t InterMedBuffer[DVBS_RS_BLOCK * 16 * 4];
 
 
 static int LenFrame = 0;
 static int m_Constellation = M_QPSK;
 int ConstellationEffiency[] = { 2,3,4,5 }; //Nb Bit per Symbol
-int DvbsInit(int SRate, int CodeRate, int Constellation = M_QPSK)
+
+
+int DvbsInit(int SRate, int CodeRate, int Constellation ,int Upsample)
 {
 	InitConstellation ();
 	m_Constellation = Constellation;
 	dvb_encode_init(CodeRate);
 	int NetBitrate = SRate * 188 * CoefFec[CodeRate] / 204 * ConstellationEffiency[Constellation];
+	m_upsample=Upsample;
+	dvbs_symbols_short=(sfcmplx*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(sfcmplx));
 	return NetBitrate;
 }
 
@@ -98,44 +134,55 @@ int DvbsAddTsPacket(uint8_t *Packet)
 	
 	switch (m_Constellation)
 	{
-		case M_QPSK:LenFrame = dvb_encode_frame(Packet, dvbs_dibit); return LenFrame; break;
-		case M_8PSK:
+		case M_QPSK:LenFrame = dvb_encode_frame(Packet, dvbs_dibit); break;
+		case M_8PSK://EXPERIMENTAL DVBS
 		{
 			LenFrame += dvb_encode_frame(Packet, InterMedBuffer + LenFrame);
-			if (LenFrame % 3 == 0) return (LenFrame*2/3); else return 0;
+			if (LenFrame % 3 == 0) return (LenFrame*2/3*m_upsample); else return 0;
 		}
 		break;
 	}
-	return LenFrame;
+	return LenFrame*m_upsample;
 }
 
 sfcmplx *Dvbs_get_IQ(void)
 {
-	
+	int psklen = 0;
+	static sfcmplx Zero;
+	Zero.im=0;
+	Zero.re=0;
 	switch (m_Constellation)
 	{
 		case M_QPSK:
 		{
-			for (int i = 0; i < LenFrame; i++)
+			for (size_t i = 0; i < (size_t)LenFrame; i++)
 			{
-				dvbs_symbol[i] =m_qpsk[dvbs_dibit[i]];
+				for(size_t j=0;j<m_upsample;j++)
+				{
+					dvbs_symbols_short[i*m_upsample+j] =(j==0)?m_qpsk[dvbs_dibit[i]]:Zero;
+					psklen++;
+				}
 			}
-			LenFrame = 0;
+			
 		}
 		break;
 		case M_8PSK:
 		{
-			int psklen = 0;
+			
 			for (int i = 0; i < LenFrame; i += 3)
 			{
 				dvbs_symbol[psklen++] = m_8psk[(InterMedBuffer[i] << 1) + ((InterMedBuffer[i + 1] & 2) >> 1)];
 				dvbs_symbol[psklen++] = m_8psk[((InterMedBuffer[i + 1] & 1) << 2) + ((InterMedBuffer[i + 2]))];
 			}
-			LenFrame = 0;
+			
 		}
+		break;
 	}
-	return (sfcmplx*)dvbs_symbol;
+		LenFrame = 0;
+		return dvbs_symbols_short;
 }
+
+
 
 // **************** DVB-S ARM **********************************
 #ifdef WITH_ARM
@@ -150,10 +197,12 @@ uint8_t BuffIQ[204 * 2];
 int NbIQOutput = 0;
 sfcmplx sBuffIQ[204 * 8];
 
+
 int DvbsInit(int SRate, int CodeRate)
 {
 	dvbsenco_init();
 	viterbi_init(CodeRate);
+	
 	return 0;
 }
 

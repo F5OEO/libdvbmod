@@ -56,8 +56,9 @@ typedef struct{
 	int stuff_bits;
 }FrameBits;
 
-#define FRAME_SIZE_NORMAL 64800
-#define FRAME_SIZE_SHORT  16200
+//4 for Upsample
+#define FRAME_SIZE_NORMAL (64800)
+#define FRAME_SIZE_SHORT  (16200)
 #define LDPC_ENCODE_TABLE_LENGTH (FRAME_SIZE_NORMAL*10)
 
 typedef struct{

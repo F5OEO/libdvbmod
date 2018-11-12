@@ -34,11 +34,11 @@ typedef struct {
 	short im;
 }sfcmplx;
 
-extern int Dvbs2Init(int SRate, int CodeRate, int Constellation, int PilotesOn, int RollOff);
+extern int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample=1);
 extern int Dvbs2AddTsPacket(uint8_t *Packet);
 extern sfcmplx *Dvbs2_get_IQ(void);
 
-extern int DvbsInit(int SRate, int CodeRate, int Constellation);
+extern int DvbsInit(int SRate, int CodeRate, int Constellation = M_QPSK,int Upsample=1);
 extern int DvbsAddTsPacket(uint8_t *Packet);
 extern sfcmplx *Dvbs_get_IQ(void);
 #ifdef WITH_ARM

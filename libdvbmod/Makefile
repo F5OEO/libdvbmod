@@ -9,6 +9,7 @@ CC = g++
 OUT_FILE_NAME = libdvbmod.a
 
 CFLAGS= -fPIC -O2 -g -Wall -c -fpermissive
+LDFLAGS = -lm -lrt -lpthread 
 
 INC = -I../Import
 
