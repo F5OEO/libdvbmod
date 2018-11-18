@@ -46,6 +46,7 @@ int ModeDvb = 0;
 #define BUFFER_SIZE (188)
 int Pilot = 0;
 unsigned int SymbolRate = 0;
+int FEC = CR_1_2;
 
 static uint64_t _timestamp_ns(void)
 {
@@ -110,6 +111,25 @@ unsigned int CalibrateOutput()
 	return OutSampleRate;
 }
 
+bool Tune(int Frequency)
+{
+	
+	#define LEN_CARRIER 1000
+	static sfcmplx Frame[LEN_CARRIER];
+	if(Frequency==0)
+	for(int i=0;i<LEN_CARRIER;i++)
+	{
+		Frame[i].re=0x7fff;
+		Frame[i].im=0;
+	}
+	else
+	{
+		//write a Chirp or Spectrum paint something ?
+	}
+	fwrite(Frame, sizeof(sfcmplx), LEN_CARRIER, output);
+	return true;
+}
+
 bool RunWithFile(bool live)
 {
 
@@ -117,6 +137,11 @@ bool RunWithFile(bool live)
 
 	static uint64_t DebugReceivedpacket = 0;
 	//fprintf(stderr, "Output samplerate is %u\n", CalibrateOutput());
+	if(FEC == 0)
+	{
+		Tune(0);
+		return true; // Bypass real modulation
+	}
 
 	if (live)
 	{
@@ -237,7 +262,7 @@ int main(int argc, char **argv)
 {
 	input = stdin;
 	output = stdout;
-	int FEC = CR_1_2;
+	
 	int Constellation = M_QPSK;
 	int a;
 	int anyargs = 0;
