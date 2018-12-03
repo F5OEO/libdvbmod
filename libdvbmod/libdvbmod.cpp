@@ -51,8 +51,8 @@ sfcmplx *Dvbs2_get_IQ(void)
 			for(size_t j=0;j<m_upsample;j++)
 			{
 				dvbs_symbols_short[i*m_upsample+j]=(j==0)?FrameS2IQ[i]:Zero;
-				dvbs_symbols_short[i*m_upsample+j].im*=m_upsample;
-				dvbs_symbols_short[i*m_upsample+j].re*=m_upsample;
+				//dvbs_symbols_short[i*m_upsample+j].im*=m_upsample;
+				//dvbs_symbols_short[i*m_upsample+j].re*=m_upsample;
 			}
 		}
 		return dvbs_symbols_short;
@@ -165,8 +165,8 @@ sfcmplx *Dvbs_get_IQ(void)
 				for(size_t j=0;j<m_upsample;j++)
 				{
 					dvbs_symbols_short[i*m_upsample+j] =(j==0)?m_qpsk[dvbs_dibit[i]]:Zero;
-					dvbs_symbols_short[i*m_upsample+j].im*=m_upsample;
- 					dvbs_symbols_short[i*m_upsample+j].re*=m_upsample;
+					//dvbs_symbols_short[i*m_upsample+j].im*=m_upsample;
+ 					//dvbs_symbols_short[i*m_upsample+j].re*=m_upsample;
 					psklen++;
 				}
 			}
