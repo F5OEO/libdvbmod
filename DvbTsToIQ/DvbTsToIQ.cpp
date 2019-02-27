@@ -185,7 +185,12 @@ bool RunWithFile(bool live)
 	if (NbRead != BUFFER_SIZE)
 	{
 		if (!live)
-			return false; //end of file
+        {
+            fseek(input, 0, SEEK_SET);
+            fprintf(stderr,"TS Loop file\n");
+            return true;
+			//return false; //end of file
+        }
 	}
 
 	if (NbRead % 188 != 0)
