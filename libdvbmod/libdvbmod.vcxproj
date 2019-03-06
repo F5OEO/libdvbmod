@@ -164,7 +164,6 @@
     <ClCompile Include="DVB-T\dvb_t_stab.cpp" />
     <ClCompile Include="DVB-T\dvb_t_sym.cpp" />
     <ClCompile Include="DVB-T\dvb_t_tp.cpp" />
-    <ClCompile Include="fec100.c" />
     <ClCompile Include="libdvbmod.cpp" />
   </ItemGroup>
   <ItemGroup>

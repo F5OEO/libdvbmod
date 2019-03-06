@@ -5,7 +5,9 @@
 #include "../dvb.h"
 #include "dvb_t.h"
 
-//#define M_PI 3.14159265358979323846264338327
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327
+#endif
 
 extern DVBTFormat m_format;
 extern double m_sample_rate;
