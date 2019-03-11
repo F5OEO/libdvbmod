@@ -281,6 +281,7 @@ Usage:\ndvb2iq -s SymbolRate [-i File Input] [-o File Output] [-f Fec]  [-m Modu
 -c 	      Constellation mapping (DVBS2) : {QPSK,8PSK,16APSK,32APSK}\n\
 -p 	      Pilots on(DVBS2)\n\
 -r 	      upsample (1,2,4) Better MER for low SR(<1M) choose 4\n\
+-d 	      print net bitrate on stdout and exit\n\
 -h            help (print this help).\n\
 Example : ./dvb2iq -s 1000 -f 7/8 -m DVBS2 -c 8PSK -p\n\
 \n",
@@ -297,11 +298,11 @@ int main(int argc, char **argv)
 	int a;
 	int anyargs = 0;
 	int upsample = 1;
-
+	bool AskNetBitrate=false;
 	ModeDvb = DVBS;
 	while (1)
 	{
-		a = getopt(argc, argv, "i:o:s:f:c:hf:m:c:pr:");
+		a = getopt(argc, argv, "i:o:s:f:c:hf:m:c:pr:d");
 
 		if (a == -1)
 		{
@@ -394,6 +395,9 @@ int main(int argc, char **argv)
 		case 'p':
 			Pilot = 1;
 			break;
+		case 'd':
+			AskNetBitrate = true;
+			break;	
 		case 'r':
 			upsample = atoi(optarg);
 			if (upsample > 4)
@@ -436,6 +440,11 @@ int main(int argc, char **argv)
 	}
 
 	fprintf(stderr, "Net TS bitrate input should be %d\n", Bitrate);
+	if(AskNetBitrate)
+	{
+		fprintf(stdout, "%d\n", Bitrate);
+		exit(1);
+	}
 	bool isapipe = (fseek(input, 0, SEEK_CUR) < 0); //Dirty trick to see if it is a pipe or not
 	if (isapipe)
 	{
