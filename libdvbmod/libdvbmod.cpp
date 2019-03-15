@@ -13,10 +13,10 @@ DVBS2 DvbS2Modulator;
 size_t DVBS2Length=0;
 static sfcmplx *dvbs_symbols_short;
 
-int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample)
+int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample,bool ShortFrame)
 {
 	DVB2FrameFormat S2Format;
-	S2Format.frame_type = FRAME_NORMAL;
+	S2Format.frame_type = ShortFrame?FRAME_SHORT:FRAME_NORMAL;
 	S2Format.code_rate = CodeRate;
 	S2Format.constellation = Constellation;
 	S2Format.pilots = PilotesOn;
@@ -26,7 +26,9 @@ int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff
 	S2Format.dummy_frame = 0;
 	DvbS2Modulator.s2_set_configure(&S2Format);
 	m_upsample=Upsample;
-	dvbs_symbols_short=(sfcmplx*)malloc(FRAME_SIZE_NORMAL*m_upsample*sizeof(sfcmplx));
+
+	int FrameSize=(S2Format.frame_type==FRAME_NORMAL)?FRAME_SIZE_NORMAL:FRAME_SIZE_SHORT;
+	dvbs_symbols_short=(sfcmplx*)malloc(FrameSize*m_upsample*sizeof(sfcmplx));
 	return (int)(SRate*DvbS2Modulator.s2_get_efficiency());
 }
 
