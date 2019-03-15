@@ -155,9 +155,9 @@ bool RunWithFile(bool live)
 		
 		if ((ret == 0) && (nout ==0))
 		{
-			fprintf(stderr,"Pipeout=%d\n",nout);
+			//fprintf(stderr,"Pipeout=%d\n",nout);
 			//usleep(100);
-			NullFiller(100);
+			//NullFiller(100);
 			//return true;
 		}	
 		/*if ((ret == 0) && (nin < 18000))
@@ -238,7 +238,17 @@ bool RunWithFile(bool live)
 			if (ModeDvb == DVBS2)
 				Frame = Dvbs2_get_IQ();
 			if(Simu==false)
+			{
+				int  nout;
+				ioctl(fileno(output), FIONREAD, &nout);
+				
+				/*if(0xFFFF-nout<len*sizeof(sfcmplx))
+				{
+					 fprintf(stderr,"dvb2iq Blocked by output to write %d/left %d -> \n",len*sizeof(sfcmplx),nout);
+					 return true;
+				}*/	 
 				fwrite(Frame, sizeof(sfcmplx), len, output);
+			}
 			/*else
 			{
 				sfcmplx *FrameSimu=(sfcmplx *)malloc(len*sizeof(sfcmplx));
@@ -281,6 +291,7 @@ Usage:\ndvb2iq -s SymbolRate [-i File Input] [-o File Output] [-f Fec]  [-m Modu
 -c 	      Constellation mapping (DVBS2) : {QPSK,8PSK,16APSK,32APSK}\n\
 -p 	      Pilots on(DVBS2)\n\
 -r 	      upsample (1,2,4) Better MER for low SR(<1M) choose 4\n\
+-v 	      ShortFrame(DVBS2)\n\
 -d 	      print net bitrate on stdout and exit\n\
 -h            help (print this help).\n\
 Example : ./dvb2iq -s 1000 -f 7/8 -m DVBS2 -c 8PSK -p\n\
@@ -300,9 +311,10 @@ int main(int argc, char **argv)
 	int upsample = 1;
 	bool AskNetBitrate=false;
 	ModeDvb = DVBS;
+	bool ShortFrame=false;
 	while (1)
 	{
-		a = getopt(argc, argv, "i:o:s:f:c:hf:m:c:pr:d");
+		a = getopt(argc, argv, "i:o:s:f:c:hf:m:c:pr:dv");
 
 		if (a == -1)
 		{
@@ -403,6 +415,9 @@ int main(int argc, char **argv)
 			if (upsample > 4)
 				upsample = 4;
 			break;
+		case 'v':
+			ShortFrame = true;
+			break;	
 		case -1:
 			break;
 		case '?':
@@ -436,7 +451,7 @@ int main(int argc, char **argv)
 	}
 	if ((ModeDvb == DVBS2)&&(FEC>=0))
 	{
-		Bitrate = Dvbs2Init(SymbolRate, FEC, Constellation, Pilot, RO_0_35, upsample);
+		Bitrate = Dvbs2Init(SymbolRate, FEC, Constellation, Pilot, RO_0_35, upsample,ShortFrame);
 	}
 
 	fprintf(stderr, "Net TS bitrate input should be %d\n", Bitrate);
