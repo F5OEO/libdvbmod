@@ -30,7 +30,7 @@ int DVB2::set_configure( DVB2FrameFormat *f )
     if( f->broadcasting )
     {
         // Set standard parametrs for broadcasting
-        f->frame_type        = FRAME_NORMAL;
+        //f->frame_type        = FRAME_NORMAL;
         f->bb_header.ts_gs   = TS_GS_TRANSPORT;
         f->bb_header.sis_mis = SIS_MIS_SINGLE;
         f->bb_header.ccm_acm = CCM;
