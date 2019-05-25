@@ -41,6 +41,7 @@ extern sfcmplx *Dvbs2_get_IQ(void);
 extern int DvbsInit(int SRate, int CodeRate, int Constellation = M_QPSK,int Upsample=1);
 extern int DvbsAddTsPacket(uint8_t *Packet);
 extern sfcmplx *Dvbs_get_IQ(void);
+extern short *Dvbs_get_MapIQ(void);
 #ifdef WITH_ARM
 #ifdef __arm__
 extern int DvbsInit(int SRate, int CodeRate);

@@ -12,6 +12,7 @@ DVBS2 DvbS2Modulator;
 
 size_t DVBS2Length=0;
 static sfcmplx *dvbs_symbols_short;
+static short *dvbs_symbols_map;
 
 int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample,bool ShortFrame)
 {
@@ -145,6 +146,7 @@ int DvbsInit(int SRate, int CodeRate, int Constellation ,int Upsample)
 	int NetBitrate = SRate * 188 * CoefFec[CodeRate] / 204 * ConstellationEffiency[Constellation];
 	m_upsample=Upsample;
 	dvbs_symbols_short=(sfcmplx*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(sfcmplx));
+	dvbs_symbols_map=(short*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(short));
 	return NetBitrate;
 }
 
@@ -201,6 +203,40 @@ sfcmplx *Dvbs_get_IQ(void)
 	}
 		LenFrame = 0;
 		return dvbs_symbols_short;
+}
+
+short *Dvbs_get_MapIQ(void)
+{
+	int psklen = 0;
+	switch (m_Constellation)
+	{
+		case M_QPSK:
+		{
+			for (size_t i = 0; i < (size_t)LenFrame; i++)
+			{
+				for(size_t j=0;j<m_upsample;j++)
+				{
+					dvbs_symbols_map[i*m_upsample+j] =(j==0)?dvbs_dibit[i]:0;
+					psklen++;
+				}
+			}
+			
+		}
+		break;
+		case M_8PSK:
+		{
+			
+			for (int i = 0; i < LenFrame; i += 3)
+			{
+				dvbs_symbol[psklen++] = m_8psk[(InterMedBuffer[i] << 1) + ((InterMedBuffer[i + 1] & 2) >> 1)];
+				dvbs_symbol[psklen++] = m_8psk[((InterMedBuffer[i + 1] & 1) << 2) + ((InterMedBuffer[i + 2]))];
+			}
+			
+		}
+		break;
+	}
+		LenFrame = 0;
+		return dvbs_symbols_map;
 }
 
 
