@@ -216,7 +216,7 @@ short *Dvbs_get_MapIQ(void)
 			{
 				for(size_t j=0;j<m_upsample;j++)
 				{
-					dvbs_symbols_map[i*m_upsample+j] =(j==0)?dvbs_dibit[i]:0;
+					dvbs_symbols_map[i*m_upsample+j] =(j==0)?dvbs_dibit[i]<<4:0;
 					psklen++;
 				}
 			}
