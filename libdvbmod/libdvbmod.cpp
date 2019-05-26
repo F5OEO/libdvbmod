@@ -146,7 +146,7 @@ int DvbsInit(int SRate, int CodeRate, int Constellation ,int Upsample)
 	int NetBitrate = SRate * 188 * CoefFec[CodeRate] / 204 * ConstellationEffiency[Constellation];
 	m_upsample=Upsample;
 	dvbs_symbols_short=(sfcmplx*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(sfcmplx));
-	dvbs_symbols_map=(short*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(short));
+	dvbs_symbols_map=(short*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(short)*2);
 	return NetBitrate;
 }
 
@@ -214,9 +214,11 @@ short *Dvbs_get_MapIQ(void)
 		{
 			for (size_t i = 0; i < (size_t)LenFrame; i++)
 			{
-				for(size_t j=0;j<m_upsample;j++)
+				for(size_t j=0;j<2;j++)
 				{
-					dvbs_symbols_map[i*m_upsample+j] =(j==0)?dvbs_dibit[i]<<4:0;
+					short dibit=dvbs_dibit[i];
+					dibit=(dibit<<8);
+					dvbs_symbols_map[i*2+j] =(j==0)?dibit:0;
 					psklen++;
 				}
 			}
