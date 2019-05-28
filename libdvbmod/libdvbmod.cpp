@@ -205,38 +205,33 @@ sfcmplx *Dvbs_get_IQ(void)
 		return dvbs_symbols_short;
 }
 
-short *Dvbs_get_MapIQ(void)
+short *Dvbs_get_MapIQ(int *Len)
 {
 	int psklen = 0;
 	switch (m_Constellation)
 	{
 		case M_QPSK:
 		{
-			for (size_t i = 0; i < (size_t)LenFrame; i++)
+			for (size_t i = 0; i < (size_t)LenFrame/6; i++)
 			{
-				for(size_t j=0;j<2;j++)
+				short package=0;
+				for(size_t j=0;j<6;j++)
 				{
-					short dibit=dvbs_dibit[i];
-					dibit=(dibit<<8);
-					dvbs_symbols_map[i*2+j] =(j==0)?dibit:0;
-					psklen++;
+					short dibit=dvbs_dibit[i*6+j];
+					dibit=(dibit<<4<<j);
+					package|=dibit;
+					
+					
 				}
+				dvbs_symbols_map[i] =package;
+				psklen++;
 			}
 			
 		}
 		break;
-		case M_8PSK:
-		{
-			
-			for (int i = 0; i < LenFrame; i += 3)
-			{
-				dvbs_symbol[psklen++] = m_8psk[(InterMedBuffer[i] << 1) + ((InterMedBuffer[i + 1] & 2) >> 1)];
-				dvbs_symbol[psklen++] = m_8psk[((InterMedBuffer[i + 1] & 1) << 2) + ((InterMedBuffer[i + 2]))];
-			}
-			
-		}
-		break;
+		
 	}
+	*Len=psklen/2;
 		LenFrame = 0;
 		return dvbs_symbols_map;
 }
