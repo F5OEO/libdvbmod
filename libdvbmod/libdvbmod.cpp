@@ -207,12 +207,82 @@ sfcmplx *Dvbs_get_IQ(void)
 
 short *Dvbs_get_MapIQ(int *Len)
 {
-	int psklen = 0;
+	int psklen=0;
+
 	switch (m_Constellation)
 	{
 		case M_QPSK:
 		{
-			for (size_t i = 0; i < (size_t)LenFrame/6; i++)
+			
+			#define MAX_SYMBOLS_REMAINING 12
+			static short RemainingSymbolTab[MAX_SYMBOLS_REMAINING];
+			static int Remaining=0;
+			int shift=0;
+			int index=0;
+			//Fill the remaining first
+			short package=0;
+
+			for (size_t i = 0; i < Remaining; i++)
+			{
+					package|=RemainingSymbolTab[i]<<(shift*2+4);
+					shift++;
+					if(shift==6)
+					{
+						dvbs_symbols_map[index] =package;
+						 shift=0;
+						 index++;
+						 package=0;
+					}	 
+			}
+
+			//Fill with the current Frame
+
+			for (size_t i = 0; i < (size_t)LenFrame; i++)
+			{
+				short dibit=dvbs_dibit[i];
+				package|=(dibit)<<(shift*2+4);
+				shift++;
+				if(shift==6)
+				{
+					dvbs_symbols_map[index] =package;
+					 shift=0;
+					 index++;
+					 package=0;
+				}
+			}
+
+			psklen=(index/2)*2; // index should be "pair"
+			//Fill Remaining
+			
+			Remaining=(index%2)*6+shift;
+			
+			for (size_t i = 0; i < Remaining; i++)
+			{
+				RemainingSymbolTab[i]=dvbs_dibit[LenFrame-Remaining+i];
+			}		
+
+
+			//DEBUG
+			//short patern=0xC840 ;//110010000100
+			//short patern=0xFFF0 ;//110010000100
+			//short patern2=0x0000 ;//110010000100
+
+			short patern=0x5550 ;//110010000100
+			short patern2=0x0660 ;//110010000100
+
+			
+			for(int i=0;i<psklen/2;i++)
+			{
+				
+				dvbs_symbols_map[i*2]=patern;
+				dvbs_symbols_map[i*2+1]=patern2;
+			}
+
+			//fprintf(stderr,"LenFrame %d, psklen %d remaining %d\n",LenFrame,psklen,Remaining);	
+			
+
+			
+			/*for (size_t i = 0; i < (size_t)LenFrame/6; i++)
 			{
 				short package=0;
 				for(size_t j=0;j<6;j++)
@@ -225,7 +295,7 @@ short *Dvbs_get_MapIQ(int *Len)
 				}
 				dvbs_symbols_map[i] =package;
 				psklen++;
-			}
+			}*/
 			
 		}
 		break;
