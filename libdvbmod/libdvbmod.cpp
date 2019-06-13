@@ -12,7 +12,7 @@ DVBS2 DvbS2Modulator;
 
 size_t DVBS2Length=0;
 static sfcmplx *dvbs_symbols_short;
-static short *dvbs_symbols_map;
+
 
 int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample,bool ShortFrame)
 {
@@ -126,7 +126,7 @@ void InitConstellation(void)
 
 static uint8_t dvbs_dibit[DVBS_RS_BLOCK*16];
 static sfcmplx dvbs_symbol[DVBS_RS_BLOCK*16*4];
-
+static short *dvbs_symbols_map;
 
 
 
@@ -146,23 +146,16 @@ int DvbsInit(int SRate, int CodeRate, int Constellation ,int Upsample)
 	int NetBitrate = SRate * 188 * CoefFec[CodeRate] / 204 * ConstellationEffiency[Constellation];
 	m_upsample=Upsample;
 	dvbs_symbols_short=(sfcmplx*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(sfcmplx));
-	dvbs_symbols_map=(short*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(short)*2);
+	dvbs_symbols_map=(short*)malloc(DVBS_RS_BLOCK*16*m_upsample*sizeof(short));
 	return NetBitrate;
 }
 
 int DvbsAddTsPacket(uint8_t *Packet)
 {
 	
-	switch (m_Constellation)
-	{
-		case M_QPSK:LenFrame = dvb_encode_frame(Packet, dvbs_dibit); break;
-		case M_8PSK://EXPERIMENTAL DVBS
-		{
-			LenFrame += dvb_encode_frame(Packet, InterMedBuffer + LenFrame);
-			if (LenFrame % 3 == 0) return (LenFrame*2/3*m_upsample); else return 0;
-		}
-		break;
-	}
+	
+	LenFrame = dvb_encode_frame(Packet, dvbs_dibit);
+		
 	return LenFrame*m_upsample;
 }
 
@@ -172,10 +165,7 @@ sfcmplx *Dvbs_get_IQ(void)
 	static sfcmplx Zero;
 	Zero.im=0;
 	Zero.re=0;
-	switch (m_Constellation)
-	{
-		case M_QPSK:
-		{
+	
 			for (size_t i = 0; i < (size_t)LenFrame; i++)
 			{
 				for(size_t j=0;j<m_upsample;j++)
@@ -187,20 +177,6 @@ sfcmplx *Dvbs_get_IQ(void)
 				}
 			}
 			
-		}
-		break;
-		case M_8PSK:
-		{
-			
-			for (int i = 0; i < LenFrame; i += 3)
-			{
-				dvbs_symbol[psklen++] = m_8psk[(InterMedBuffer[i] << 1) + ((InterMedBuffer[i + 1] & 2) >> 1)];
-				dvbs_symbol[psklen++] = m_8psk[((InterMedBuffer[i + 1] & 1) << 2) + ((InterMedBuffer[i + 2]))];
-			}
-			
-		}
-		break;
-	}
 		LenFrame = 0;
 		return dvbs_symbols_short;
 }
@@ -209,10 +185,7 @@ short *Dvbs_get_MapIQ(int *Len)
 {
 	int psklen=0;
 
-	switch (m_Constellation)
-	{
-		case M_QPSK:
-		{
+	
 			
 			#define MAX_SYMBOLS_REMAINING 12
 			static short RemainingSymbolTab[MAX_SYMBOLS_REMAINING];
@@ -267,18 +240,28 @@ short *Dvbs_get_MapIQ(int *Len)
 			//short patern=0xFFF0 ;//110010000100
 			//short patern2=0x0000 ;//110010000100
 
-			short patern=0x5550 ;//110010000100
-			short patern2=0x0660 ;//110010000100
+			static short patern=0x5550 ;
+			static short patern2=0x7770;
+		//0xFFF0 ; //0x6660 zarb,en fetch12 semble perdre bit
 
-			
-			for(int i=0;i<psklen/2;i++)
+			static int debug=0;
+
+			/*for(int i=0;i<psklen/2;i++)
 			{
 				
 				dvbs_symbols_map[i*2]=patern;
 				dvbs_symbols_map[i*2+1]=patern2;
-			}
+			}*/
 
-			//fprintf(stderr,"LenFrame %d, psklen %d remaining %d\n",LenFrame,psklen,Remaining);	
+			/*for(int i=0;i<psklen/2;i++)
+			{
+				
+				dvbs_symbols_map[i*2]=(debug%2==0)?patern:patern2;
+				dvbs_symbols_map[i*2+1]=(debug%2==0)?patern:patern2;
+			}
+			*/
+			debug++;
+			//fprintf(stderr,"LenFrame %d, psklen %d remaining %d Index=%d shift=%d\n",LenFrame,psklen,Remaining,index,shift);	
 			
 
 			
@@ -297,10 +280,7 @@ short *Dvbs_get_MapIQ(int *Len)
 				psklen++;
 			}*/
 			
-		}
-		break;
 		
-	}
 	*Len=psklen/2;
 		LenFrame = 0;
 		return dvbs_symbols_map;
