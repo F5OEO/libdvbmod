@@ -10,9 +10,14 @@ size_t m_upsample=1;
 float CoefFec[12] = { 1 / 4.0,1 / 3.0,2 / 5.0,1 / 2.0,3 / 5.0,2 / 3.0,3 / 4.0,4 / 5.0,5 / 6.0,8 / 9.0,7 / 8.0,9 / 10.0 };
 DVBS2 DvbS2Modulator;
 
-size_t DVBS2Length=0;
+static size_t DVBS2Length=0;
 static sfcmplx *dvbs_symbols_short;
+static short *dvbs2_symbols_map;
 
+
+
+
+	
 
 int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff,int Upsample,bool ShortFrame)
 {
@@ -42,6 +47,8 @@ int Dvbs2Init(int SRate,int CodeRate,int Constellation,int PilotesOn,int RollOff
 	int FrameSize=(S2Format.frame_type==FRAME_NORMAL)?FRAME_SIZE_NORMAL:FRAME_SIZE_SHORT;
 	fprintf(stderr,"Frame Size=%d\n",FrameSize);
 	dvbs_symbols_short=(sfcmplx*)malloc(FrameSize*m_upsample*sizeof(sfcmplx));
+	dvbs2_symbols_map=(short*)malloc(FrameSize*sizeof(short)); //Should be less bet never mind and fixme free it !!!
+	
 	return (int)(SRate*DvbS2Modulator.s2_get_efficiency());
 }
 
@@ -79,6 +86,126 @@ sfcmplx *Dvbs2_get_IQ(void)
 
 	}
 	
+}
+
+//Dirty trick to MAP !!! Could be improved 
+// Instead of packing before, we use a reverse oq I/Q and map it inverse on DVBS...
+/*
+short *Dvbs2_get_MapIQ(int *len)
+{
+		//QPSK 64800/12Symbols=5400
+		//QPSK 16200/12Symbols=1350
+
+		sfcmplx *FrameS2IQ=(sfcmplx*)DvbS2Modulator.pl_get_frame();
+
+		int shift=0;
+		int MapLen=0;
+		for(size_t i=0;i<DVBS2Length;i++)
+		{
+				short Symbol;
+				static short MapSymbol=0;
+				
+				switch(FrameS2IQ[i].re)
+				{
+					case 23169:Symbol=(FrameS2IQ[i].im==23169)?0:1;break;
+					case -23169:Symbol=(FrameS2IQ[i].im==23169)?2:3;break;
+					default:fprintf(stderr,"Unknwown symbol %d\n",FrameS2IQ[i].re);
+				}
+				fprintf(stderr,"DVBS2Length %d\n",DVBS2Length);
+				MapSymbol|=Symbol<<(4+2*shift);
+				shift++;
+				if(shift==6)
+				{
+					dvbs2_symbols_map[MapLen]=MapSymbol;
+					MapLen++;
+					shift=0;
+					MapSymbol=0;
+				}
+				
+		
+		}
+		*len=MapLen/2;
+		return dvbs2_symbols_map;
+	
+	
+}
+*/
+short *Dvbs2_get_MapIQ(int *Len)
+{
+	int psklen=0;
+
+	
+			
+			#define MAX_SYMBOLS_REMAINING 12
+			static short RemainingSymbolTab[MAX_SYMBOLS_REMAINING];
+			static int Remaining=0;
+			int shift=0;
+			int index=0;
+			//Fill the remaining first
+			short package=0;
+
+			sfcmplx *FrameS2IQ=(sfcmplx*)DvbS2Modulator.pl_get_frame();
+
+			for (size_t i = 0; i < Remaining; i++)
+			{
+					package|=RemainingSymbolTab[i]<<(shift*2+4);
+					shift++;
+					if(shift==6)
+					{
+						dvbs2_symbols_map[index] =package;
+						 shift=0;
+						 index++;
+						 package=0;
+					}	 
+			}
+
+			//Fill with the current Frame
+
+			for (size_t i = 0; i < (size_t)DVBS2Length; i++)
+			{
+				short dibit;
+				switch(FrameS2IQ[i].re)
+				{
+					case 23169:dibit=(FrameS2IQ[i].im==23169)?0:1;break;
+					case -23169:dibit=(FrameS2IQ[i].im==23169)?2:3;break;
+					default:fprintf(stderr,"Unknwown symbol %d\n",FrameS2IQ[i].re);
+				}
+				
+				package|=(dibit)<<(shift*2+4);
+				shift++;
+				if(shift==6)
+				{
+					dvbs2_symbols_map[index] =package;
+					 shift=0;
+					 index++;
+					 package=0;
+				}
+			}
+
+			psklen=(index/2)*2; // index should be "pair"
+			//Fill Remaining
+			
+			Remaining=(index%2)*6+shift;
+			
+			for (size_t i = 0; i < Remaining; i++)
+			{
+				short dibit;
+				switch(FrameS2IQ[DVBS2Length-Remaining+i].re)
+				{
+					case 23169:dibit=(FrameS2IQ[i].im==23169)?0:1;break;
+					case -23169:dibit=(FrameS2IQ[i].im==23169)?2:3;break;
+					default:fprintf(stderr,"Unknwown symbol %d\n",FrameS2IQ[i].re);
+				}
+				RemainingSymbolTab[i]=dibit;
+			}		
+
+
+			
+			
+		
+	*Len=psklen/2;
+		
+		return dvbs2_symbols_map;
 }
 
 //******************* DVB-S **********************************
