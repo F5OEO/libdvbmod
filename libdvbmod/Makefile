@@ -29,7 +29,8 @@ OUT_DIR=./lib
 $(OUT_FILE_NAME):\
 $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard *.cpp))\
 $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-S/*.cpp)) \
-$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-T/*.cpp)) \
+$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-S2/*.cpp))
+#$(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-T/*.cpp)) \
 $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(wildcard DVB-S2/*.cpp))
 	ar -r -o $(OUT_DIR)/$@ $^
 
