@@ -77,13 +77,18 @@ void DVBS2::calc_efficiency( void )
     // PL header overhead
     if( m_format[1].pilots )
     {
-        po = (s/(90*16))-1;// 1 pilot every 16 blocks (of 90 symbols)
+        //po = (s/(90*16))-1;// 1 pilot every 16 blocks (of 90 symbols)
+        po = (int)((s/90.0-1.0)/16.0);// 1 pilot every 16 blocks (of 90 symbols)
         po = po*36;        // No pilot at the end
         a  = s/(90+po+s);
+
+        //a=(s)/(90*(s+1)+36*(int)((s-1)/16.0));
+
     }
     else
     {
-        a = s/(90+s);// No pilots
+       
+       a = s/(90+s);// No pilots
     }
     // Modulation efficiency
     a = a*m;
